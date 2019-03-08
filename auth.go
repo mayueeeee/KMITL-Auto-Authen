@@ -82,6 +82,7 @@ var (
 	heartbeatTimer    time.Time
 	loginCount        int
 	connectionState   bool
+	resetTimer        time.Time
 )
 
 func errorHandler(err error) {
@@ -152,6 +153,7 @@ func syncState() {
 }
 
 func doLogin(username string, password string) {
+	resetTimer = time.Now().Add(time.Hour * time.Duration(8))
 	sendLoginRequest(username, password)
 	syncState()
 }
@@ -167,7 +169,6 @@ func main() {
 	username := os.Getenv("KMITL_USERNAME")
 	password := os.Getenv("KMITL_PASSWORD")
 	log.Println("Try to login as", username)
-	resetTimer := time.Now().Add(time.Hour * time.Duration(8))
 	doLogin(username, password)
 	time.Sleep(30 * time.Second)
 
