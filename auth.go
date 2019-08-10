@@ -185,8 +185,13 @@ func doLogin(username string, password string) {
 
 func main() {
 	fmt.Println("Auto Authen By Mayueeeee: CE KMITL")
-	err := godotenv.Load()
-	errorHandler(err)
+	if err := godotenv.Load(); err != nil {
+		if os.Getenv("KMITL_USERNAME") == "" && os.Getenv("KMITL_PASSWORD") == "" {
+			log.Fatal("Can't open .env file and required environment variable couldn't not be found")
+			os.Exit(1)
+		}
+	}
+
 	CookieJar, _ = cookiejar.New(nil)
 	Client = http.Client{
 		Jar: CookieJar,
