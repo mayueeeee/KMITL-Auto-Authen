@@ -195,7 +195,7 @@ func main() {
 	password = os.Getenv("KMITL_PASSWORD")
 	log.Println("Try to login as", username)
 	doLogin(username, password)
-	time.Sleep(30 * time.Second)
+	time.Sleep(10 * time.Second)
 
 	for {
 		if resetTimer.Before(time.Now()) {
@@ -220,6 +220,6 @@ func main() {
 			doLogin(username, password)
 		}
 	Sleep:
-		time.Sleep(30 * time.Second)
+		time.Sleep(10 * time.Second)
 	}
 }
