@@ -83,73 +83,98 @@ var (
 	loginCount        int
 	connectionState   bool
 	resetTimer        time.Time
+	username          string
+	password          string
 )
 
+// TODO: Refactor error handling function to receive function
 func errorHandler(err error) {
 	if err != nil {
-		panic(err)
+		log.Println("Error detected!, Wait for 15 sec and relogin", err.Error())
+		time.Sleep(15 * time.Second)
+		doLogin(username, password)
 	}
 }
 
 func sendLoginRequest(username string, password string) bool {
 	formData := url.Values{"userName": {username}, "password": {password}, "browserFlag": {"en"}}
 	resp, err := Client.PostForm("http://10.252.23.101:8080/PortalServer/Webauth/webAuthAction!login.action", formData)
-	errorHandler(err)
-	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
-	respData := UserResponse{}
-	jsonErr := json.Unmarshal(body, &respData)
-	if jsonErr != nil {
-		log.Fatal(jsonErr)
-	}
-	if respData.Success {
-		heartbeatInterval = respData.Data.WebHeatbeatPeriod
-		heartbeatTimer = time.Now().Add(time.Millisecond * time.Duration(heartbeatInterval))
-		log.Println("Successful login at", respData.Data.LoginDate)
-		return true
+
+	if err != nil {
+		errorHandler(err)
 	} else {
-		log.Println("Server: ", respData.Message)
-		panic("Unexpected error from server, Bye!")
-		return false
+		defer resp.Body.Close()
+		body, _ := ioutil.ReadAll(resp.Body)
+		respData := UserResponse{}
+		jsonErr := json.Unmarshal(body, &respData)
+		if jsonErr != nil {
+			log.Fatal(jsonErr)
+		}
+		if respData.Success {
+			heartbeatInterval = respData.Data.WebHeatbeatPeriod
+			heartbeatTimer = time.Now().Add(time.Millisecond * time.Duration(heartbeatInterval))
+			log.Println("Successful login at", respData.Data.LoginDate)
+			return true
+		} else {
+			log.Println("Server: ", respData.Message)
+			//panic("Unexpected error from server, Bye!")
+			return false
+		}
 	}
+	return false
+
 }
 
 func checkConnection() bool {
 	resp, err := http.Get("http://detectportal.firefox.com/")
-	errorHandler(err)
-	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
-	return strings.TrimRight(string(body), "\n") == "success"
+	if err != nil {
+		errorHandler(err)
+	} else {
+		defer resp.Body.Close()
+		body, _ := ioutil.ReadAll(resp.Body)
+		return strings.TrimRight(string(body), "\n") == "success"
+	}
+	return false
+
 }
 
 func sendHeartBeat(username string) bool {
 	formData := url.Values{"userName": {username}}
 	resp, err := Client.PostForm("http://10.252.23.101:8080/PortalServer/Webauth/webAuthAction!hearbeat.action", formData)
-	errorHandler(err)
-	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
-	respData := HeartBeatResponse{}
-	jsonErr := json.Unmarshal(body, &respData)
-	if jsonErr != nil {
-		log.Fatal(jsonErr)
+	if err != nil {
+		errorHandler(err)
+	} else {
+		defer resp.Body.Close()
+		body, _ := ioutil.ReadAll(resp.Body)
+		respData := HeartBeatResponse{}
+		jsonErr := json.Unmarshal(body, &respData)
+		if jsonErr != nil {
+			log.Fatal(jsonErr)
+		}
+		if respData.Data == "ONLINE" {
+			heartbeatTimer = time.Now().Add(time.Millisecond * time.Duration(heartbeatInterval))
+		}
+		return respData.Data == "ONLINE"
 	}
-	if (respData.Data == "ONLINE") {
-		heartbeatTimer = time.Now().Add(time.Millisecond * time.Duration(heartbeatInterval))
-	}
-	return respData.Data == "ONLINE"
+	return false
+
 }
 
 func syncState() {
 	formData := url.Values{}
 	resp, err := Client.PostForm("http://10.252.23.101:8080/PortalServer/Webauth/webAuthAction!syncPortalAuthResult.action", formData)
-	errorHandler(err)
-	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
-	respData := UserResponse{}
-	jsonErr := json.Unmarshal(body, &respData)
-	if jsonErr != nil {
-		log.Fatal(jsonErr)
+	if err != nil {
+		errorHandler(err)
+	} else {
+		defer resp.Body.Close()
+		body, _ := ioutil.ReadAll(resp.Body)
+		respData := UserResponse{}
+		jsonErr := json.Unmarshal(body, &respData)
+		if jsonErr != nil {
+			log.Fatal(jsonErr)
+		}
 	}
+
 }
 
 func doLogin(username string, password string) {
@@ -160,17 +185,23 @@ func doLogin(username string, password string) {
 
 func main() {
 	fmt.Println("Auto Authen By Mayueeeee: CE KMITL")
-	err := godotenv.Load()
-	errorHandler(err)
+	// Check system env (useful for Docker)
+	if err := godotenv.Load(); err != nil {
+		if os.Getenv("KMITL_USERNAME") == "" && os.Getenv("KMITL_PASSWORD") == "" {
+			log.Fatal("Can't open .env file and required environment variable couldn't not be found")
+			os.Exit(1)
+		}
+	}
+
 	CookieJar, _ = cookiejar.New(nil)
 	Client = http.Client{
 		Jar: CookieJar,
 	}
-	username := os.Getenv("KMITL_USERNAME")
-	password := os.Getenv("KMITL_PASSWORD")
+	username = os.Getenv("KMITL_USERNAME")
+	password = os.Getenv("KMITL_PASSWORD")
 	log.Println("Try to login as", username)
 	doLogin(username, password)
-	time.Sleep(30 * time.Second)
+	time.Sleep(10 * time.Second)
 
 	for {
 		if resetTimer.Before(time.Now()) {
@@ -195,6 +226,6 @@ func main() {
 			doLogin(username, password)
 		}
 	Sleep:
-		time.Sleep(30 * time.Second)
+		time.Sleep(10 * time.Second)
 	}
 }
