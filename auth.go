@@ -185,6 +185,7 @@ func doLogin(username string, password string) {
 
 func main() {
 	fmt.Println("Auto Authen By Mayueeeee: CE KMITL")
+	// Check system env (useful for Docker)
 	if err := godotenv.Load(); err != nil {
 		if os.Getenv("KMITL_USERNAME") == "" && os.Getenv("KMITL_PASSWORD") == "" {
 			log.Fatal("Can't open .env file and required environment variable couldn't not be found")
