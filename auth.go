@@ -98,7 +98,7 @@ func errorHandler(err error) {
 
 func sendLoginRequest(username string, password string) bool {
 	formData := url.Values{"userName": {username}, "password": {password}, "browserFlag": {"en"}}
-	resp, err := Client.PostForm("http://10.252.23.101:8080/PortalServer/Webauth/webAuthAction!login.action", formData)
+	resp, err := Client.PostForm("http://connect.kmitl.ac.th:8080/PortalServer/Webauth/webAuthAction!login.action", formData)
 
 	if err != nil {
 		errorHandler(err)
@@ -140,7 +140,7 @@ func checkConnection() bool {
 
 func sendHeartBeat(username string) bool {
 	formData := url.Values{"userName": {username}}
-	resp, err := Client.PostForm("http://10.252.23.101:8080/PortalServer/Webauth/webAuthAction!hearbeat.action", formData)
+	resp, err := Client.PostForm("http://connect.kmitl.ac.th:8080/PortalServer/Webauth/webAuthAction!hearbeat.action", formData)
 	if err != nil {
 		errorHandler(err)
 	} else {
@@ -162,7 +162,7 @@ func sendHeartBeat(username string) bool {
 
 func syncState() {
 	formData := url.Values{}
-	resp, err := Client.PostForm("http://10.252.23.101:8080/PortalServer/Webauth/webAuthAction!syncPortalAuthResult.action", formData)
+	resp, err := Client.PostForm("http://connect.kmitl.ac.th:8080/PortalServer/Webauth/webAuthAction!syncPortalAuthResult.action", formData)
 	if err != nil {
 		errorHandler(err)
 	} else {
